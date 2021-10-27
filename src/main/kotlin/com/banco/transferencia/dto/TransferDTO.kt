@@ -6,7 +6,8 @@ import java.math.BigDecimal
 data class TransferDTO(
     val userAccount: String,
     val userAgency: String,
-    val receiverContact: String,
+    val receiverAccount: String,
+    val receiverAgency: String,
     val value: BigDecimal,
     val type: TransferType
 )
