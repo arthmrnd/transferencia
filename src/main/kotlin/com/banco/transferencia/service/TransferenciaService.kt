@@ -1,6 +1,7 @@
 package com.banco.transferencia.service
 
 import com.banco.transferencia.entity.Transferencia
+import com.banco.transferencia.nonreactive.NonReactiveTransferenciaService
 import com.banco.transferencia.repository.TransferenciaRepository
 import com.banco.transferencia.webclient.ContactWebClient
 import com.banco.transferencia.webclient.WithdrawResponse
@@ -13,12 +14,15 @@ import reactor.core.publisher.Mono
 class TransferenciaService(
     val repository: TransferenciaRepository,
     val withdrawWebClient: WithdrawWebClient,
-    val contactWebClient: ContactWebClient
+    val contactWebClient: ContactWebClient,
+    val nonReactiveTransferenciaService: NonReactiveTransferenciaService
 ) {
 
     fun doTransfer(transferencia: Transferencia): Mono<Transferencia> {
 
-        //TODO("Not yet implemented") VERIFY THE TRANSFER TIME
+        if (nonReactiveTransferenciaService.checkSimilarTransactions(transferencia)){
+            return saveTransfer(transferencia)
+        }
 
         val withdrawConsult: WithdrawResponse = withdrawWebClient
             .doWithdraw(transferencia.value) ?: return saveTransfer(transferencia)
@@ -31,11 +35,11 @@ class TransferenciaService(
             }
         }
 
-        val ret = saveTransfer(transferencia)
+        val monoTransferencia = saveTransfer(transferencia)
         if (transferencia.transferSuccess) {
             withdrawWebClient.sendStatus(withdrawConsult)
         }
-        return ret
+        return monoTransferencia
 
     }
 
